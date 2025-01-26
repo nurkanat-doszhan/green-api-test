@@ -1,0 +1,22 @@
+.mess {
+  width: fit-content;
+  max-width: 70%;
+  padding: 13px 20px;
+  border-radius: 20px;
+  margin-bottom: 6px;
+  white-space: pre-wrap;
+}
+
+.my-message {
+  background: #82ff75;
+  margin-left: auto;
+}
+
+.their-message {
+  background: #fff;
+  margin-right: auto;
+}
+
+.user-list li {
+  user-select: none;
+}

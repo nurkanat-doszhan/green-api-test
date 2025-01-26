@@ -10,9 +10,7 @@ import { PrimeReactProvider } from 'primereact/api';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <PrimeReactProvider>
-      <App />
-    </PrimeReactProvider>
-  </React.StrictMode>
+  <PrimeReactProvider>
+    <App />
+  </PrimeReactProvider>
 );
