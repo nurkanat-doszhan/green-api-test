@@ -24,3 +24,10 @@
 .p-menubar-button {
   display: none;
 }
+
+.p-toast-detail {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

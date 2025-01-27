@@ -2,12 +2,15 @@ import './App.css';
 import axios from 'axios';
 import MessageBox from './components/MessageBox';
 import Login from './components/Login';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
+import { Toast } from 'primereact/toast';
 
 function App() {
   const [chats, setChats] = useState({});
   const [selectedUser, setSelectedUser] = useState(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [newSenderPhone, setNewSenderPhone] = useState('');
   const [messageText, setMessageText] = useState("");
   const [addUserBlock, setAddUserBlock] = useState(false);
   const [newUserPhoneNumber, setNewUserPhoneNumber] = useState('');
@@ -15,31 +18,11 @@ function App() {
   const [apiTokenInstance, setApiTokenInstance] = useState(() => localStorage.getItem("apiTokenInstance") || "");
   const [isAuthorized, setIsAuthorized] = useState(() => JSON.parse(localStorage.getItem("isAuthorized")) || false);
   const [users, setUsers] = useState(() => JSON.parse(localStorage.getItem("myContacts")) || []);
+  const toast = useRef(null);
 
-  // const useLocalStorage = (key, initialValue) => {
-  //   const [value, setValue] = useState(() => {
-  //     try {
-  //       const savedValue = localStorage.getItem(key);
-  //       return savedValue ? JSON.parse(savedValue) : initialValue;
-  //     } catch {
-  //       return initialValue;
-  //     }
-  //   });
-  
-  //   useEffect(() => {
-  //     try {
-  //       localStorage.setItem(key, JSON.stringify(value));
-  //     } catch (error) {
-  //       console.error(`Ошибка сохранения ${key} в localStorage`, error);
-  //     }
-  //   }, [key, value]);
-  
-  //   return [value, setValue];
-  // }
-  // const [idInstance, setIdInstance] = useLocalStorage("idInstance", "");
-  // const [apiTokenInstance, setApiTokenInstance] = useLocalStorage("apiTokenInstance", "");
-  // const [isAuthorized, setIsAuthorized] = useLocalStorage("isAuthorized", false);
-  // const [users, setUsers] = useLocalStorage("myContacts", []);
+  const showInfo = () => {
+    toast.current.show({severity:'info', summary: newSenderPhone, detail: newMessage, life: 3000});
+  }
   
   const currentMessages = selectedUser ? chats[selectedUser] || [] : [];
   const processedMessages = useRef(new Set());
@@ -59,14 +42,21 @@ function App() {
   useEffect(() => {
     localStorage.setItem('myContacts', JSON.stringify(users))
   }, [users]);
-  
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  /** Уведомление при получении нового сообщения */
+  useEffect(() => {
+    if (newMessage == '') {
+      return
+    }
+    showInfo();
+  }, [newMessage])
+
   useEffect(() => {
     const interval = setInterval(() => {
       getMessage();
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [getMessage]);
 
   const apiClient = axios.create({
     baseURL: 'https://7103.api.greenapi.com',
@@ -99,7 +89,7 @@ function App() {
       });
   };
 
-  const getMessage = () => {
+  function getMessage() {
     const getMessageUrl = `/waInstance${idInstance}/receiveNotification/${apiTokenInstance}?receiveTimeout=5`;
   
     const deleteMessageUrl = (receiptId) =>
@@ -144,6 +134,8 @@ function App() {
   
           if (isUserInContacts && textMessage) {
             console.log("Получено сообщение от пользователя:", senderPhone);
+            setNewMessage(textMessage);
+            setNewSenderPhone(senderPhone);
   
             // Добавляем сообщение в чат
             addMessage(senderPhone, {
@@ -211,6 +203,7 @@ function App() {
     <div className="flex w-12 py-3 h-screen align-items-center justify-content-center">
       { isAuthorized ? (
         <>
+          <Toast ref={toast} />
           <MessageBox
             selectedUser={selectedUser}
             users={users}
@@ -230,6 +223,8 @@ function App() {
             severity="help"
             className='absolute bottom-0 left-0 m-4'
             rounded
+            placeholder="Right"
+            tooltip="Выйти из аккаунта"
             onClick={() => {
               setIsAuthorized(false);
             }}
