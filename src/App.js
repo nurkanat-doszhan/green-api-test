@@ -2,7 +2,7 @@ import './App.css';
 import axios from 'axios';
 import MessageBox from './components/MessageBox';
 import Login from './components/Login';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 
@@ -45,7 +45,7 @@ function App() {
 
   /** Уведомление при получении нового сообщения */
   useEffect(() => {
-    if (newMessage == '') {
+    if (newMessage === '') {
       return
     }
     showInfo();
