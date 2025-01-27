@@ -42,6 +42,7 @@ function App() {
   // const [users, setUsers] = useLocalStorage("myContacts", []);
   
   const currentMessages = selectedUser ? chats[selectedUser] || [] : [];
+  const processedMessages = useRef(new Set());
   
   useEffect(() => {
     localStorage.setItem("idInstance", idInstance);
@@ -59,7 +60,7 @@ function App() {
     localStorage.setItem('myContacts', JSON.stringify(users))
   }, [users]);
   
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const interval = setInterval(() => {
       getMessage();
@@ -114,6 +115,14 @@ function App() {
           const senderPhone = senderData?.sender?.split("@")[0]; // Извлекаем номер без @c.us
           const textMessage = messageData?.textMessageData?.textMessage;
           const receiptId = response.data.receiptId;
+
+          if (processedMessages.current.has(receiptId)) {
+            console.log("Сообщение уже обработано:", receiptId);
+            return;
+          }
+
+          // Добавляем ID в обработанные сообщения
+          processedMessages.current.add(receiptId);
 
           if (!receiptId) {
             console.error("receiptId отсутствует в ответе сервера.");
@@ -180,13 +189,13 @@ function App() {
     }));
   };
 
-  const handleSendMessage = () => {
-    if (!selectedUser || !messageText.trim()) return;
+  // const handleSendMessage = () => {
+  //   if (!selectedUser || !messageText.trim()) return;
 
-    const newMessage = { sender: "me", text: messageText };
-    addMessage(selectedUser, newMessage);
-    setMessageText("");
-  };
+  //   const newMessage = { sender: "me", text: messageText };
+  //   addMessage(selectedUser, newMessage);
+  //   setMessageText("");
+  // };
 
   const addUserPhoneNumber = () => {
     setUsers([...users, {number: newUserPhoneNumber}])
