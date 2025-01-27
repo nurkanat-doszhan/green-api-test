@@ -20,3 +20,7 @@
 .user-list li {
   user-select: none;
 }
+
+.p-menubar-button {
+  display: none;
+}

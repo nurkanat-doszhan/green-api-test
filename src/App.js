@@ -9,17 +9,37 @@ function App() {
   const [chats, setChats] = useState({});
   const [selectedUser, setSelectedUser] = useState(null);
   const [messageText, setMessageText] = useState("");
+  const [addUserBlock, setAddUserBlock] = useState(false);
+  const [newUserPhoneNumber, setNewUserPhoneNumber] = useState('');
   const [idInstance, setIdInstance] = useState(() => localStorage.getItem("idInstance") || "");
   const [apiTokenInstance, setApiTokenInstance] = useState(() => localStorage.getItem("apiTokenInstance") || "");
   const [isAuthorized, setIsAuthorized] = useState(() => JSON.parse(localStorage.getItem("isAuthorized")) || false);
-  const [addUserBlock, setAddUserBlock] = useState(false);
-  const [newUserPhoneNumber, setNewUserPhoneNumber] = useState('');
+  const [users, setUsers] = useState(() => JSON.parse(localStorage.getItem("myContacts")) || []);
 
-  const [users, setUsers] = useState([
-    { number: '77021713398' },
-    { number: '77476371514' },
-    { number: '77025510476' },
-  ]);
+  // const useLocalStorage = (key, initialValue) => {
+  //   const [value, setValue] = useState(() => {
+  //     try {
+  //       const savedValue = localStorage.getItem(key);
+  //       return savedValue ? JSON.parse(savedValue) : initialValue;
+  //     } catch {
+  //       return initialValue;
+  //     }
+  //   });
+  
+  //   useEffect(() => {
+  //     try {
+  //       localStorage.setItem(key, JSON.stringify(value));
+  //     } catch (error) {
+  //       console.error(`Ошибка сохранения ${key} в localStorage`, error);
+  //     }
+  //   }, [key, value]);
+  
+  //   return [value, setValue];
+  // }
+  // const [idInstance, setIdInstance] = useLocalStorage("idInstance", "");
+  // const [apiTokenInstance, setApiTokenInstance] = useLocalStorage("apiTokenInstance", "");
+  // const [isAuthorized, setIsAuthorized] = useLocalStorage("isAuthorized", false);
+  // const [users, setUsers] = useLocalStorage("myContacts", []);
   
   const currentMessages = selectedUser ? chats[selectedUser] || [] : [];
   
@@ -34,6 +54,11 @@ function App() {
   useEffect(() => {
     localStorage.setItem("isAuthorized", JSON.stringify(isAuthorized));
   }, [isAuthorized]);
+
+  useEffect(() => {
+    localStorage.setItem('myContacts', JSON.stringify(users))
+  }, [users]);
+  
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -74,33 +99,28 @@ function App() {
   };
 
   const getMessage = () => {
-    // URL для получения сообщения
     const getMessageUrl = `/waInstance${idInstance}/receiveNotification/${apiTokenInstance}?receiveTimeout=5`;
   
-    // URL для удаления уведомления
     const deleteMessageUrl = (receiptId) =>
       `/waInstance${idInstance}/deleteNotification/${apiTokenInstance}/${receiptId}`;
   
-    // Получение сообщения
     apiClient
-    .get(getMessageUrl)
-    .then((response) => {
-      if (response.data) {
-        const messageData = response.data.body.messageData?.textMessageData?.textMessage;
-        const receiptId = response.data.receiptId;
+      .get(getMessageUrl)
+      .then((response) => {
+        if (response.data) {
+          // console.log(response.data);
+          const { senderData, messageData } = response.data.body;
+  
+          const senderPhone = senderData?.sender?.split("@")[0]; // Извлекаем номер без @c.us
+          const textMessage = messageData?.textMessageData?.textMessage;
+          const receiptId = response.data.receiptId;
 
-        if (messageData && receiptId) {
-          console.log("Получено сообщение:", messageData);
-          console.log("Идентификатор уведомления:", receiptId);
-          console.log("Идентификатор уведомления:", response.data.body.messageData.textMessageData.textMessage);
+          if (!receiptId) {
+            console.error("receiptId отсутствует в ответе сервера.");
+            return;
+          }
 
-          // Обновляем состояние с новым сообщением
-          addMessage(selectedUser, {
-            sender: response.data.body.senderData.senderName || "Unknown",
-            text: response.data.body.messageData.textMessageData.textMessage,
-          });
-
-          // Удаляем уведомление после успешной обработки
+          // Удаляем уведомление, даже если оно от неизвестного номера
           apiClient
             .delete(deleteMessageUrl(receiptId))
             .then(() => {
@@ -109,16 +129,40 @@ function App() {
             .catch((error) => {
               console.error("Ошибка при удалении уведомления:", error);
             });
+
+          // Проверяем, есть ли номер в списке users
+          const isUserInContacts = users.some((user) => user.number === senderPhone);
+  
+          if (isUserInContacts && textMessage) {
+            console.log("Получено сообщение от пользователя:", senderPhone);
+  
+            // Добавляем сообщение в чат
+            addMessage(senderPhone, {
+              sender: senderData.senderName || "Unknown",
+              text: textMessage,
+            });
+            // Удаляем уведомление после обработки
+            // if (receiptId) {
+            //   console.log(`Попытка удалить уведомление с ID: ${receiptId}`);
+            //   apiClient
+            //     .delete(deleteMessageUrl(receiptId))
+            //     .then(() => {
+            //       console.log(`Уведомление с ID ${receiptId} успешно удалено.`);
+            //     })
+            //     .catch((error) => {
+            //       console.error(`Ошибка при удалении уведомления с ID ${receiptId}:`, error);
+            //     });
+            // }
+          } else {
+            console.warn("Сообщение не от пользователя из списка:", senderPhone);
+          }
         } else {
-          console.warn("Сообщение или ID уведомления отсутствуют в ответе.");
+          console.warn("Нет новых сообщений.");
         }
-      } else {
-        console.warn("Нет новых сообщений.");
-      }
-    })
-    .catch((error) => {
-      console.error("Ошибка при получении сообщения:", error);
-    });
+      })
+      .catch((error) => {
+        console.error("Ошибка при получении сообщения:", error);
+      });
   };
 
   const handleLogin = () => {
@@ -153,7 +197,7 @@ function App() {
   const addUserBlockHandler = () => {
     setAddUserBlock(true);
   }
-  
+
   return (
     <div className="flex w-12 py-3 h-screen align-items-center justify-content-center">
       { isAuthorized ? (
@@ -166,7 +210,6 @@ function App() {
             currentMessages={currentMessages}
             handleUserSelect={phoneNumber => setSelectedUser(phoneNumber) }
             onInputChangeHandler={e => setMessageText(e.target.value) }
-            
             addUserBlockHandler={addUserBlockHandler}
             addUserBlock={addUserBlock}
             newUserPhoneNumber={newUserPhoneNumber}
@@ -176,13 +219,10 @@ function App() {
           <Button
             icon="pi pi-sign-out"
             severity="help"
-            className='absolute bottom-0 right-0 m-4'
+            className='absolute bottom-0 left-0 m-4'
             rounded
             onClick={() => {
               setIsAuthorized(false);
-              localStorage.removeItem("idInstance");
-              localStorage.removeItem("apiTokenInstance");
-              localStorage.removeItem("isAuthorized");
             }}
           />
         </>

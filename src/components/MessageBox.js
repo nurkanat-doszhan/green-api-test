@@ -11,6 +11,7 @@ const MessageBox = ({
   onInputChangeHandler,
   postMessage,
   currentMessages,
+  deleteUser,
   addUserBlock,
   addUserBlockHandler,
   newUserPhoneNumber,
@@ -20,7 +21,7 @@ const MessageBox = ({
   
   return (
     <>
-      <div className="w-3 h-full bg-indigo-100 font-bold text-center p-4">
+      <div className="w-4 xl:w-3 h-full bg-indigo-100 font-bold text-center p-2">
         <ul className="m-0 p-0 user-list list-none border-1 surface-border border-round p-3 flex flex-column gap-2 w-full h-full">
           { !addUserBlock ? ( 
           <li
@@ -50,17 +51,15 @@ const MessageBox = ({
           ))}
         </ul>
       </div>
-      <div className="w-7 h-full bg-teal-50 flex align-items-end p-4">
+      <div className="w-8 xl:w-7 h-full bg-teal-50 flex align-items-end p-4">
         {
           selectedUser == null ? (
           <div className='w-full h-full flex align-items-center justify-content-center'>
-            <h2 className='text-center flex align-items-center'>
-              Выберите чат <i className="pi pi-comments ml-2" style={{ fontSize: '2rem' }}></i>
-            </h2>
+            <h2 className='text-center flex align-items-center'>Выберите чат или добавьте нового пользователя</h2>
           </div>
           ) : (
           <div className="flex flex-column h-full w-full">
-            <Menubar start={<p>{'+'+selectedUser}</p>} end={<Button label="Удалить" icon="pi pi-trash" severity="danger" />} />
+            <Menubar start={<p>{'+'+selectedUser}</p>} />
             <div className="h-full p-2 overflow-y-scroll">{
               currentMessages.map((msg, index) => (
                 <div key={index} className={`mess ${msg.sender === 'me' ? 'my-message' : 'their-message'}`}>
